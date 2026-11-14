@@ -1,6 +1,6 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { createApp, isValidImei } = require('../server/app');
+const { createApp, isValidImei, cleanSimSlots } = require('../server/app');
 const http = require('node:http');
 
 async function withServer(app, run) {
@@ -14,6 +14,15 @@ test('IMEI validator checks the 15-digit Luhn check digit', () => {
   assert.equal(isValidImei('490154203237518'), true);
   assert.equal(isValidImei('490154203237519'), false);
   assert.equal(isValidImei('12345'), false);
+});
+
+test('SIM slot validator accepts dual-SIM network metadata and rejects invalid values', () => {
+  assert.deepEqual(cleanSimSlots([
+    { slotIndex: 0, simState: 'READY', operatorName: 'MTN', operatorNumeric: '62130', countryIso: 'ng' },
+    { slotIndex: 1, simState: 'ABSENT' }
+  ]).length, 2);
+  assert.equal(cleanSimSlots([{ slotIndex: 2, simState: 'READY' }]), null);
+  assert.equal(cleanSimSlots([{ slotIndex: 0, simState: 'READY', operatorNumeric: 'ABC' }]), null);
 });
 
 test('health endpoint reports service status without authentication', async () => {
@@ -48,5 +57,54 @@ test('registration rejects invalid IMEI before writing to the database', async (
     });
     assert.equal(response.status, 400);
     assert.match((await response.json()).error, /valid 15-digit IMEI/i);
+  });
+});
+
+test('SIM report is owner-authorized and stores only allowed slot metadata', async () => {
+  let saved;
+  const device = {
+    ownerUid: 'owner-1',
+    simSlots: [{ slotIndex: 0, simState: 'READY', operatorName: 'Airtel', operatorNumeric: '62120', countryIso: 'ng' }]
+  };
+  const db = {
+    collection: () => ({
+      doc: () => ({
+        get: async () => ({ exists: true, data: () => device }),
+        update: async (value) => { saved = value; }
+      })
+    })
+  };
+  const admin = {
+    auth: () => ({ verifyIdToken: async () => ({ uid: 'owner-1' }) }),
+    firestore: { FieldValue: { serverTimestamp: () => 'SERVER_TIME' } }
+  };
+  const app = createApp({ admin, db });
+  await withServer(app, async (base) => {
+    const response = await fetch(`${base}/api/devices/device-1/sim-status`, {
+      method: 'POST',
+      headers: { Authorization: 'Bearer test-token', 'Content-Type': 'application/json' },
+      body: JSON.stringify({ slots: [{ slotIndex: 0, simState: 'READY', operatorName: 'MTN', operatorNumeric: '62130', countryIso: 'ng', iccid: 'must-not-be-stored' }] })
+    });
+    assert.equal(response.status, 202);
+    const body = await response.json();
+    assert.equal(body.simNetworkChangeDetected, true);
+    assert.equal(saved.simSlots[0].operatorName, 'MTN');
+    assert.equal(Object.hasOwn(saved.simSlots[0], 'iccid'), false);
+    assert.equal(saved.simLastReportedAt, 'SERVER_TIME');
+  });
+});
+
+test('SIM report rejects invalid slot data', async () => {
+  const app = createApp({
+    admin: { auth: () => ({ verifyIdToken: async () => ({ uid: 'owner-1' }) }) },
+    db: { collection: () => { throw new Error('Database must not be called for invalid SIM data'); } }
+  });
+  await withServer(app, async (base) => {
+    const response = await fetch(`${base}/api/devices/device-1/sim-status`, {
+      method: 'POST',
+      headers: { Authorization: 'Bearer test-token', 'Content-Type': 'application/json' },
+      body: JSON.stringify({ slots: [{ slotIndex: 4, simState: 'READY' }] })
+    });
+    assert.equal(response.status, 400);
   });
 });
