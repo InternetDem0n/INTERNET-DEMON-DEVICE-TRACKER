@@ -14,20 +14,37 @@
       <a class="brand" href="#"><span class="brand-mark">ID</span><span>INTERNET-DEMON<small>DEVICE TRACKER</small></span></a>
       <p class="nav-label">WORKSPACE</p>
       <a class="nav-item active" href="#overview">◈ <span>Overview</span></a>
+      <a class="nav-item" href="#register">＋ <span>Register device</span></a>
       <a class="nav-item" href="#devices">▣ <span>My devices</span></a>
       <a class="nav-item" href="#activity">◷ <span>Location history</span></a>
       <div class="sidebar-note"><span class="pulse"></span> Secure owner access<br><small>Consent-based tracking</small></div>
     </aside>
     <main class="main" id="overview">
       <header class="topbar"><div><p class="eyebrow">PERSONAL CONTROL CENTER</p><h1>Device overview</h1></div><div class="user-chip"><span class="avatar">ID</span><span>Owner dashboard</span></div></header>
-      <section class="welcome"><div><p class="eyebrow">YOUR CONNECTED WORLD</p><h2>Know where your devices are.</h2><p>View the last location shared by devices you own and have explicitly paired.</p></div><div class="welcome-icon">⌖</div></section>
+      <section class="welcome"><div><p class="eyebrow">YOUR CONNECTED WORLD</p><h2>Identify and protect your devices.</h2><p>Register device identifiers, then connect an authorized GPS companion app or carrier integration.</p></div><div class="welcome-icon">⌖</div></section>
       <section class="stats" aria-label="Device summary">
         <article class="stat-card"><span>REGISTERED DEVICES</span><strong id="device-count">—</strong><small>Linked to your account</small></article>
-        <article class="stat-card"><span>ONLINE NOW</span><strong id="online-count">—</strong><small>Recently reporting</small></article>
-        <article class="stat-card"><span>LAST LOCATION</span><strong id="last-seen">—</strong><small>Most recent device update</small></article>
+        <article class="stat-card"><span>GPS REPORTING</span><strong id="online-count">—</strong><small>Devices sharing location</small></article>
+        <article class="stat-card"><span>NETWORK FEED</span><strong id="last-seen">—</strong><small>Authorized carrier only</small></article>
       </section>
-      <section class="panel" id="devices"><div class="panel-heading"><div><p class="eyebrow">DEVICE MANAGEMENT</p><h3>Your devices</h3></div><span class="status-pill"><i></i> Owner verified access</span></div><div id="device-list" class="empty-state"><div class="empty-icon">⌖</div><h3>No devices loaded</h3><p>Sign-in and device pairing will appear here when Firebase is configured.</p><button id="refresh-btn" type="button">Refresh devices</button></div></section>
-      <section class="panel map-panel" id="activity"><div class="panel-heading"><div><p class="eyebrow">LOCATION ACTIVITY</p><h3>Last known locations</h3></div><span class="muted">GPS reports only</span></div><div class="map-placeholder"><div class="map-cross">＋</div><div><strong>Location map will appear here</strong><p>Only owner-authorized GPS reports are displayed.</p></div></div></section>
+      <section class="panel" id="register">
+        <div class="panel-heading"><div><p class="eyebrow">DEVICE IDENTIFICATION</p><h3>Register a device</h3></div><span class="status-pill"><i></i> Owner-authorized</span></div>
+        <form id="register-form" class="device-form">
+          <label>Device label<input name="label" maxlength="60" placeholder="e.g. My TECNO Spark 40"></label>
+          <div class="form-grid">
+            <label>IMEI (15 digits)<input name="imei" inputmode="numeric" autocomplete="off" maxlength="17" placeholder="Enter IMEI"></label>
+            <label>Serial number<input name="serialNumber" autocomplete="off" maxlength="64" placeholder="Enter serial number"></label>
+            <label>Manufacturer<input name="manufacturer" maxlength="40" placeholder="TECNO"></label>
+            <label>Model<input name="model" maxlength="60" placeholder="Spark 40"></label>
+            <label>Mobile network<input name="carrier" maxlength="40" placeholder="MTN"></label>
+          </div>
+          <label class="consent-line"><input type="checkbox" name="ownerConsent" required> I own this device or have the owner's permission to register it.</label>
+          <button type="submit" id="register-btn">Register device</button>
+          <p id="form-message" class="muted" role="status">Sign-in is required before registration can be submitted. Do not share IMEI or serial numbers publicly.</p>
+        </form>
+      </section>
+      <section class="panel" id="devices"><div class="panel-heading"><div><p class="eyebrow">DEVICE MANAGEMENT</p><h3>Your devices</h3></div><span class="status-pill"><i></i> Owner verified access</span></div><div id="device-list" class="empty-state"><div class="empty-icon">⌖</div><h3>No devices loaded</h3><p>Connect Firebase Authentication to load your registered devices.</p><button id="refresh-btn" type="button">Refresh devices</button></div></section>
+      <section class="panel map-panel" id="activity"><div class="panel-heading"><div><p class="eyebrow">LOCATION ACTIVITY</p><h3>Last known locations</h3></div><span class="muted">GPS reports only</span></div><div class="map-placeholder"><div class="map-cross">＋</div><div><strong>No GPS feed connected</strong><p>Locations appear only after an authorized companion app shares GPS with permission.</p></div></div><p class="muted">MTN/network location requires a formal, authorized operator integration. IMEI and serial lookup alone cannot return GPS coordinates.</p></section>
       <footer>INTERNET-DEMON DEVICE TRACKER <span>·</span> Private by design · No IMEI-based location lookup</footer>
     </main>
   </div>
